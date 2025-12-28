@@ -35,7 +35,7 @@ jobs:
         fetch-depth: 0
         path: 'gh-clone/simutrans'
 
-    - name: Install dependencies
+    - name: Install dependencies1
       working-directory: /usr/local/lib/android
       run: |
         echo "$(ls -l)"
@@ -49,7 +49,7 @@ jobs:
         echo "($pwd)/cmake/3.31.6/bin" >> $GITHUB_PATH
         sudo yes | sdkmanager --install "ndk;29.0.14206865"
         echo "($pwd)/ndk/29.0.14206865" >> $GITHUB_PATH
-        echo "($pwd)/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/" >> $GITHUB_PATH
+        echo "($pwd)/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
         ln -s llvm-objdump ${ANDROID_HOME}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/objdump
         echo "Github path ($GITHUB_PATH)"
         sdfgfd
