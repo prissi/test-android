@@ -1,0 +1,191 @@
+name: Nightly build Android
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        path: 'gh-clone/simutrans'
+
+    - name: Install dependencies
+      run: |
+        sudo dpkg --add-architecture i386
+        sudo apt-get -yqq update
+        sudo apt-get -ym install curl expect git libc6:i386 libgcc1:i386 libncurses6:i386 libstdc++6:i386 zlib1g:i386 openjdk-21-jdk wget unzip vim make subversion zip
+        sudo apt remove cmake
+
+name: Nightly test Android
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        path: 'gh-clone/simutrans'
+
+    - name: Install dependencies
+      working-directory: /usr/local/lib/android
+      run: |
+        echo "$(ls -l)"
+        yes | sdkmanager --licenses
+        sudo yes | cmdline-tools/latest/bin/sdkmanager --install "cmdline-tools;latest"
+        sudo yes | sdkmanager --install "platform-tools"
+        echo "($pwd)/platform-tools" >> $GITHUB_PATH
+        sudo yes | sdkmanager --install "build-tools;35.0.0"
+        echo "($pwd)/build-tools/35.0.0" >> $GITHUB_PATH
+        sudo yes | sdkmanager --install "cmake;3.31.6"
+        echo "($pwd)/cmake/3.31.6/bin" >> $GITHUB_PATH
+        sudo yes | sdkmanager --install "ndk;29.0.14206865"
+        echo "($pwd)/ndk/29.0.14206865" >> $GITHUB_PATH
+        echo "($pwd)/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/" >> $GITHUB_PATH
+        ln -s llvm-objdump ${ANDROID_HOME}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/objdump
+        echo "Github path ($GITHUB_PATH)"
+        sdfgfd
+
+    - name: Setup Android SDK environment variables
+      run: |
+        sudo rm -rf /usr/local/lib/android
+        echo "ANDROID_HOME=/opt/android-sdk-linux" >> $GITHUB_ENV
+        echo "ANDROID_SDK_HOME=/opt/android-sdk-linux" >> $GITHUB_ENV
+        echo "ANDROID_SDK_ROOT=/opt/android-sdk-linux" >> $GITHUB_ENV
+        echo "ANDROID_SDK=/opt/android-sdk-linux" >> $GITHUB_ENV
+        echo "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" >> $GITHUB_ENV
+
+    - name: Create working directory for next steps
+      run: |
+        sudo mkdir /opt/android-sdk-linux
+        sudo mkdir /android-sdl
+        sudo chown -R runner /opt/android-sdk-linux
+        sudo chgrp -R docker /opt/android-sdk-linux
+        sudo chown -R runner /android-sdl
+        sudo chgrp -R docker /android-sdl
+
+    - name: Install Android SDK tools
+      working-directory: /opt/android-sdk-linux
+      run: |
+        wget https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+        unzip commandlinetools-linux-13114758_latest.zip
+        rm commandlinetools-linux-13114758_latest.zip
+        mv cmdline-tools latest
+        mkdir cmdline-tools
+        mv latest cmdline-tools/latest
+        echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+    - name: Install Android SDK dependencies
+      working-directory: /opt/android-sdk-linux
+      run: |
+        yes | sdkmanager --licenses
+        yes | sdkmanager --install "platform-tools"
+        echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+        yes | sdkmanager --install "build-tools;35.0.0"
+        echo "$ANDROID_HOME/build-tools/35.0.0" >> $GITHUB_PATH
+        yes | sdkmanager --install "cmake;3.31.6"
+        echo "$ANDROID_HOME/cmake/3.31.6/bin" >> $GITHUB_PATH
+        yes | sdkmanager --install "ndk;29.0.14206865"
+        echo "$ANDROID_HOME/ndk/29.0.14206865" >> $GITHUB_PATH
+        echo "$ANDROID_HOME/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/" >> $GITHUB_PATH
+        ln -s llvm-objdump ${ANDROID_HOME}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/objdump
+        echo "Github path ($GITHUB_PATH)"
+
+    - name: Install keystore for Android APK signing
+      run: |
+        mkdir /home/runner/.android/
+        keytool -genkey -v -keystore /home/runner/.android/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -keypass android -storepass android -dname "cn=example.com,ou=exampleou,dc=example,dc=com"
+
+    - name: Set up android project
+      working-directory: /android-sdl
+      run: |
+        git clone --depth 1 https://github.com/simutrans/simutrans-android-project
+        cd simutrans-android-project
+        git submodule init
+        git submodule update
+        cd simutrans/jni/SDL
+        git revert 53dbe18  --no-commit
+        cd ../../..
+
+        cp -r $GITHUB_WORKSPACE/gh-clone/simutrans simutrans/jni/simutrans
+        cp -r simutrans/jni/SDL/android-project/app/src/main/java simutrans/src/main
+        cd simutrans/jni
+        ./simutrans/src/android/AndroidPreBuild.sh
+        cp -rf simutrans/simutrans/. ../src/main/assets
+
+
+    - name: Build libraries
+      working-directory: /android-sdl/simutrans-android-project/simutrans/jni
+      run: |
+        ./build_libraries.sh
+        # Fluidsynth is a PITA to build; using the prebuilt release instead
+        wget https://github.com/FluidSynth/fluidsynth/releases/download/v2.5.1/fluidsynth-2.5.1-android24.zip
+        unzip fluidsynth-*.zip -d fluidsynth
+
+    - name: Build Simutrans
+      env:
+          SIGNING_KEYSTORE: /android-sdl/simutrans-android-project/simutrans/jni/simutrans/src/android/Simutrans-upload.keystore
+          SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASS }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASS }}
+      working-directory: gh-clone/simutrans
+      run: |
+        echo "action_state=yellow" >> $GITHUB_ENV
+        sed -i "s/versionCode [0-9]\+/versionCode $(./tools/get_revision.sh)/" /android-sdl/simutrans-android-project/simutrans/build.gradle
+        VERSION=`sed -n 's/#define SIM_VERSION_MAJOR *\([0-9]*\)$/\1/ p' <src/simutrans/simversion.h`.`sed -n 's/#define SIM_VERSION_MINOR *\([0-9]*\)$/\1/ p' <src/simutrans/simversion.h`.`sed -n 's/#define SIM_VERSION_PATCH *\([0-9]*\)$/\1/ p' <src/simutrans/simversion.h`
+        NIGHTLY=`sed -n 's/#define SIM_VERSION_BUILD SIM_BUILD_NIGHTLY/ Nightly/ p' <src/simutrans/simversion.h``sed -n 's/#define SIM_VERSION_BUILD SIM_BUILD_RELEASE_CANDIDATE/ Release candidate/ p' <src/simutrans/simversion.h`
+        sed -i 's/versionName.*$/versionName "'"$VERSION$NIGHTLY"'"/' /android-sdl/simutrans-android-project/simutrans/build.gradle
+        cd /android-sdl/simutrans-android-project
+        cat simutrans/build.gradle
+        ./gradlew assembleRelease
+        ./gradlew bundleRelease
+        cd /android-sdl/simutrans-android-project/simutrans/build/outputs/bundle/release
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore $SIGNING_KEYSTORE -storepass $SIGNING_STORE_PASSWORD simutrans-release.aab $SIGNING_KEY_ALIAS
+        wget https://github.com/google/bundletool/releases/download/1.18.2/bundletool-all-1.18.2.jar
+        chmod 775 bundletool-all-1.18.2.jar
+        java -jar bundletool-all-1.18.2.jar build-apks --bundle=simutrans-release.aab --output=temp.apks --mode=universal
+        rm -rf bundletool-all-1.18.2.jar
+        unzip temp.apks
+        rm -rf temp.apks toc.pb
+        mv universal.apk simutrans-nightly.apk
+        mkdir whatsNewDirectory
+        echo `cd $GITHUB_WORKSPACE/gh-clone/simutrans && git log --pretty=format:'%s' -1` > whatsNewDirectory/whatsnew-en-US
+
+
+    - name: Update binaries of Nightly Release aab
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: /android-sdl/simutrans-android-project/simutrans/build/outputs/bundle/release/simutrans-release.aab
+        asset_name: simuandroid-nightly.aab
+        tag: Nightly
+        overwrite: true
+
+    - name: Update binaries of Nightly Release apk
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: /android-sdl/simutrans-android-project/simutrans/build/outputs/bundle/release/simutrans-nightly.apk
+        asset_name: simuandroid-nightly.apk
+        tag: Nightly
+        overwrite: true
+
+    - name: Release Beta on Google Play Store
+      uses: r0adkll/upload-google-play@v1
+      if: github.repository == 'simutrans/simutrans'
+      with:
+        serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+        packageName: com.simutrans
+        releaseFiles: /android-sdl/simutrans-android-project/simutrans/build/outputs/bundle/release/simutrans-release.aab
+        track: beta
+        status: completed
+        whatsNewDirectory: /android-sdl/simutrans-android-project/simutrans/build/outputs/bundle/release/whatsNewDirectory
+
