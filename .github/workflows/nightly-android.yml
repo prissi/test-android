@@ -21,7 +21,7 @@ jobs:
         sudo apt remove cmake
 
     - name: Install dependencies1
-      working-directory: /usr/local/lib/android
+      working-directory: /usr/local/lib/android/sdk
       run: |
         echo "$(ls -l)"
         yes | sdkmanager --licenses
