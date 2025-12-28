@@ -20,21 +20,6 @@ jobs:
         sudo apt-get -ym install curl expect git libc6:i386 libgcc1:i386 libncurses6:i386 libstdc++6:i386 zlib1g:i386 openjdk-21-jdk wget unzip vim make subversion zip
         sudo apt remove cmake
 
-name: Nightly test Android
-
-on:
-  push:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        path: 'gh-clone/simutrans'
-
     - name: Install dependencies1
       working-directory: /usr/local/lib/android
       run: |
