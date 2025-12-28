@@ -24,16 +24,17 @@ jobs:
       working-directory: /usr/local/lib/android/sdk
       run: |
         echo "$(ls -l)"
-        yes | cmdline-tools/latest/bin/sdkmanager --licenses
-        sudo yes | cmdline-tools/latest/bin/sdkmanager --install "cmdline-tools;latest"
+        mv cmdline-tools/latest cmdline-tools/existing
+        yes | cmdline-tools/existing/bin/sdkmanager --licenses
+        sudo yes | cmdline-tools/existing/bin/sdkmanager --install "cmdline-tools;latest"
         echo "($pwd)/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        sudo yes | sdkmanager --install "platform-tools"
+        sudo yes | cmdline-tools/latest/bin/sdkmanager --install "platform-tools"
         echo "($pwd)/platform-tools" >> $GITHUB_PATH
-        sudo yes | sdkmanager --install "build-tools;35.0.0"
+        sudo yes | cmdline-tools/latest/bin/sdkmanager --install "build-tools;35.0.0"
         echo "($pwd)/build-tools/35.0.0" >> $GITHUB_PATH
-        sudo yes | sdkmanager --install "cmake;3.31.6"
+        sudo yes | cmdline-tools/latest/bin/sdkmanager --install "cmake;3.31.6"
         echo "($pwd)/cmake/3.31.6/bin" >> $GITHUB_PATH
-        sudo yes | sdkmanager --install "ndk;29.0.14206865"
+        sudo yes | cmdline-tools/latest/bin/sdkmanager --install "ndk;29.0.14206865"
         echo "($pwd)/ndk/29.0.14206865" >> $GITHUB_PATH
         echo "($pwd)/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
         ln -s llvm-objdump ${ANDROID_HOME}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/objdump
