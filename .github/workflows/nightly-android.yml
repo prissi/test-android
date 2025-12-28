@@ -39,52 +39,15 @@ jobs:
         echo "($pwd)/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
         ln -s llvm-objdump ${ANDROID_HOME}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/objdump
         echo "Github path ($GITHUB_PATH)"
-        sdfgfd
 
     - name: Setup Android SDK environment variables
       run: |
         sudo rm -rf /usr/local/lib/android
-        echo "ANDROID_HOME=/opt/android-sdk-linux" >> $GITHUB_ENV
-        echo "ANDROID_SDK_HOME=/opt/android-sdk-linux" >> $GITHUB_ENV
-        echo "ANDROID_SDK_ROOT=/opt/android-sdk-linux" >> $GITHUB_ENV
-        echo "ANDROID_SDK=/opt/android-sdk-linux" >> $GITHUB_ENV
+        echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+        echo "ANDROID_SDK_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+        echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+        echo "ANDROID_SDK=/usr/local/lib/android/sdk" >> $GITHUB_ENV
         echo "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" >> $GITHUB_ENV
-
-    - name: Create working directory for next steps
-      run: |
-        sudo mkdir /opt/android-sdk-linux
-        sudo mkdir /android-sdl
-        sudo chown -R runner /opt/android-sdk-linux
-        sudo chgrp -R docker /opt/android-sdk-linux
-        sudo chown -R runner /android-sdl
-        sudo chgrp -R docker /android-sdl
-
-    - name: Install Android SDK tools
-      working-directory: /opt/android-sdk-linux
-      run: |
-        wget https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
-        unzip commandlinetools-linux-13114758_latest.zip
-        rm commandlinetools-linux-13114758_latest.zip
-        mv cmdline-tools latest
-        mkdir cmdline-tools
-        mv latest cmdline-tools/latest
-        echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
-
-    - name: Install Android SDK dependencies
-      working-directory: /opt/android-sdk-linux
-      run: |
-        yes | sdkmanager --licenses
-        yes | sdkmanager --install "platform-tools"
-        echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-        yes | sdkmanager --install "build-tools;35.0.0"
-        echo "$ANDROID_HOME/build-tools/35.0.0" >> $GITHUB_PATH
-        yes | sdkmanager --install "cmake;3.31.6"
-        echo "$ANDROID_HOME/cmake/3.31.6/bin" >> $GITHUB_PATH
-        yes | sdkmanager --install "ndk;29.0.14206865"
-        echo "$ANDROID_HOME/ndk/29.0.14206865" >> $GITHUB_PATH
-        echo "$ANDROID_HOME/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/" >> $GITHUB_PATH
-        ln -s llvm-objdump ${ANDROID_HOME}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/objdump
-        echo "Github path ($GITHUB_PATH)"
 
     - name: Install keystore for Android APK signing
       run: |
@@ -100,7 +63,10 @@ jobs:
         git submodule update
         cd simutrans/jni/SDL
         git revert 53dbe18  --no-commit
-        cd ../../..
+
+        cd ..
+        svn checkout svn://servers.simutrans.org/simutrans/trunk simutrans
+        cd ../..
 
         cp -r $GITHUB_WORKSPACE/gh-clone/simutrans simutrans/jni/simutrans
         cp -r simutrans/jni/SDL/android-project/app/src/main/java simutrans/src/main
