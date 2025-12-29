@@ -23,7 +23,7 @@ jobs:
     - name: Install dependencies1
       working-directory: /usr/local/lib/android/sdk
       run: |
-        echo "$(find .. -maxdepth 4 -type d)"
+        echo "$(find .. -maxdepth 3 -type d)"
         rm -rf ndk
         mv cmdline-tools/latest cmdline-tools/existing
         yes | cmdline-tools/existing/bin/sdkmanager --licenses
@@ -31,8 +31,8 @@ jobs:
         echo "($pwd)/cmdline-tools/latest/bin" >> $GITHUB_PATH
         sudo yes | cmdline-tools/latest/bin/sdkmanager --install "platform-tools"
         echo "($pwd)/platform-tools" >> $GITHUB_PATH
-        sudo yes | cmdline-tools/latest/bin/sdkmanager --uninstall "build-tools;34.0.0
-        sudo yes | cmdline-tools/latest/bin/sdkmanager --uninstall "build-tools;35.0.0
+        sudo yes | cmdline-tools/latest/bin/sdkmanager --uninstall "build-tools;34.0.0"
+        sudo yes | cmdline-tools/latest/bin/sdkmanager --uninstall "build-tools;35.0.0"
         sudo yes | cmdline-tools/latest/bin/sdkmanager --install "cmake;3.31.6"
         echo "($pwd)/cmake/3.31.6/bin" >> $GITHUB_PATH
         sudo yes | cmdline-tools/latest/bin/sdkmanager --install "ndk;29.0.14206865"
