@@ -1,4 +1,4 @@
-oname: Nightly build Android
+name: Nightly build Android
 
 on:
   push:
