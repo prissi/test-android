@@ -1,4 +1,4 @@
-name: Nightly build Android
+oname: Nightly build Android
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
     - name: Install dependencies1
       working-directory: /usr/local/lib/android/sdk
       run: |
-        echo "$(ls -l)"
+        echo "$(find .. -maxdepth 4 -type dl)"
         mv cmdline-tools/latest cmdline-tools/existing
         yes | cmdline-tools/existing/bin/sdkmanager --licenses
         sudo yes | cmdline-tools/existing/bin/sdkmanager --install "cmdline-tools;latest"
@@ -71,6 +71,8 @@ jobs:
 
         cd ..
         svn checkout svn://servers.simutrans.org/simutrans/trunk simutrans
+        echo "$(ls -l)"
+        echo "$(ls simutrans)"
         cd ../..
 
         cp -r $GITHUB_WORKSPACE/gh-clone/simutrans simutrans/jni/simutrans
