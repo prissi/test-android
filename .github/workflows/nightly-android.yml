@@ -23,7 +23,8 @@ jobs:
     - name: Install dependencies1
       working-directory: /usr/local/lib/android/sdk
       run: |
-        echo "$(find .. -maxdepth 4 -type dl)"
+        echo "$(find .. -maxdepth 4 -type d)"
+        dgfsjgfdgsdk
         mv cmdline-tools/latest cmdline-tools/existing
         yes | cmdline-tools/existing/bin/sdkmanager --licenses
         sudo yes | cmdline-tools/existing/bin/sdkmanager --install "cmdline-tools;latest"
